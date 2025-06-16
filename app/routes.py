@@ -1,7 +1,6 @@
-# app/routes.py
 from flask import Blueprint, request, jsonify
 from app.models import User, Meme
-from app.db import session_local   
+from app.models import db 
 
 main = Blueprint('main', __name__)
 
@@ -18,24 +17,22 @@ def register():
     Creates a new User and returns its ID.
     """
     data = request.get_json()
-    session = session_local()
     try:
-        #1) build the User
         user = User(
-            username      = data['username'],
-            password_hash = data['password']
+            username=data['username'],
+            password_hash=data['password']
         )
-        # 2) save
-        session.add(user)
-        session.commit()
+        db.session.add(user)
+        db.session.commit()
 
         return jsonify({
             "message": "User created",
-            "user_id":  user.id
+            "user_id": user.id
         }), 201
 
-    finally:
-        session.close()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
 
 @main.route('/memes', methods=['GET'])
@@ -44,19 +41,18 @@ def list_memes():
     GET /memes
     Returns a JSON array of every meme in the DB.
     """
-    session = session_local()
     try:
-        all_memes = session.query(Meme).all()
+        all_memes = db.session.query(Meme).all()
         result = [
             {
-                "id":         m.id,
-                "title":      m.title,
+                "id": m.id,
+                "title": m.title,
                 "image_path": m.image_path,
-                "likes":      m.likes
+                "likes": m.likes
             }
             for m in all_memes
         ]
         return jsonify(result), 200
 
-    finally:
-        session.close()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
