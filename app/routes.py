@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from app.models import User, Meme
 from app.models import db 
+from werkzeug.utils import secure_filename
+import os
 
 main = Blueprint('main', __name__)
 
@@ -56,3 +58,32 @@ def list_memes():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.',1)[1].lower() in {'png','jpg','jpeg'}
+
+@main.route('/upload', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No file uploaded, Retry'}), 400
+
+    file = request.files['image']
+
+    if file.filename == '':
+        return jsonify({'error': 'No file selected, Retry'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'File Type not supported, Retry'}), 415
+
+    filename = secure_filename(file.filename)
+    upload_folder = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+    save_path = os.path.join(upload_folder, filename)
+    file.save(save_path)
+
+    return jsonify({
+        "message": "Upload successful",
+        "file_path": f"/static/uploads/{filename}"
+    }), 201
+
+    
