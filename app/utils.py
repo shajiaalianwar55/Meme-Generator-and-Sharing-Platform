@@ -1,30 +1,41 @@
 import os
 from PIL import Image, ImageFont, ImageDraw
 
-def add_caption(image_path, output_path, top_text="TOP TEXT", bottom_text="BOTTOM TEXT"):
+def add_caption(
+    image_path,
+    top_text="TOP TEXT",
+    bottom_text="BOTTOM TEXT",
+    font_path=None,
+    font_size=140
+):
+    """
+    Open the image at `image_path`, draw `top_text` and `bottom_text`
+    (centered), and return the resulting PIL Image object.
+    """
+
+    # 1) Load image & prepare to draw
     img = Image.open(image_path)
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", size=140)
 
-    image_width = img.width
+    # 2) Pick a font: your TTF if available, else PIL’s default
+    try:
+        font = ImageFont.truetype(font_path or "arial.ttf", font_size)
+    except (IOError, OSError):
+        font = ImageFont.load_default()
 
-    # TOP TEXT
-    bbox_top = draw.textbbox((0, 0), top_text, font=font)
-    text_width = bbox_top[2] - bbox_top[0]
-    text_height = bbox_top[3] - bbox_top[1]
-    x = (image_width - text_width) / 2
-    draw.text((x, 10), top_text, font=font, fill="white")
+    # 3) Draw the top text, centered
+    bbox = draw.textbbox((0, 0), top_text, font=font)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (img.width - w) // 2
+    y = 10
+    draw.text((x, y), top_text, font=font, fill="white")
 
-    # BOTTOM TEXT
-    image_height = img.height
-    bbox_bottom = draw.textbbox((0, 0), bottom_text, font=font)
-    text_width = bbox_bottom[2] - bbox_bottom[0]
-    text_height = bbox_bottom[3] - bbox_bottom[1]
-    y = image_height - text_height - 10
-    draw.text((x, y), bottom_text, font=font, fill="red")
-    
-    print("Resolved output path:", os.path.abspath(output_path))
-    print("Saving to:", output_path)
-    img.save(output_path)
-    img.show()
+    # 4) Draw the bottom text, re-measuring and centering
+    bbox = draw.textbbox((0, 0), bottom_text, font=font)
+    w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (img.width - w) // 2
+    y = img.height - h - 10
+    draw.text((x, y), bottom_text, font=font, fill="white")
 
+    # 5) Return the edited image; let your Flask route save it
+    return img
