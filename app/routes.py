@@ -47,12 +47,18 @@ def register():
 def list_memes():
     try:
         memes = Meme.query.all()
-        result = [{
-            'id': m.id,
-            'title': m.title,
-            'image_path': m.image_path,  # now a URL, not a file‐system path
-            'likes': m.likes
-        } for m in memes]
+        result = []
+        for meme in memes:
+            meme_data= {
+                'id': meme.id,
+                'title':meme.title,
+                'image_path':meme.image_path,
+                'likes':meme.likes,
+                'created_at':meme.created_at.isoformat(),
+                'username':meme.user.username
+            }
+            result.append(meme_data)
+
         return jsonify(result), 200
 
     except Exception as e:
@@ -130,3 +136,13 @@ def create_meme():
         'path': url_path,
         'title': meme_entry.title
     }), 201
+    
+@main.route('/memes/<int:meme_id>/like', methods = ['POST'])
+def like_meme(meme_id):
+    meme=Meme.query.get(meme_id)
+    if meme is not None:
+        meme.likes+=1
+        db.session.commit()
+        return jsonify({'message' : 'like added', 'meme_likes' : meme.likes}),200
+    else:
+        return jsonify({'error':'Meme does not exist'}),404
