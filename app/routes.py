@@ -144,5 +144,5 @@ def like_meme(meme_id):
         meme.likes+=1
         db.session.commit()
         return jsonify({'message' : 'like added', 'meme_likes' : meme.likes}),200
-    #else:
-        #return jsonify({'error':'Meme does not exist'}),404
+    else:
+        return jsonify({'error':'Meme does not exist'}),404
