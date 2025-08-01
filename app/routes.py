@@ -137,12 +137,12 @@ def create_meme():
         'title': meme_entry.title
     }), 201
     
-@main.route('/memes/<int:meme_id>/like', methods = ['POST'])
+@main.route('/memes/<int:meme_id>/like', methods = ['POST']) #increase likes
 def like_meme(meme_id):
     meme=Meme.query.get(meme_id)
     if meme is not None:
         meme.likes+=1
         db.session.commit()
         return jsonify({'message' : 'like added', 'meme_likes' : meme.likes}),200
-    else:
-        return jsonify({'error':'Meme does not exist'}),404
+    #else:
+        #return jsonify({'error':'Meme does not exist'}),404
